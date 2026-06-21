@@ -1,0 +1,13 @@
+{
+  "target_codebase_path": "path/to/your/target/codebase",
+  "target_app_url": "http://localhost:3000",
+  "credentials": {
+    "username": "demo@user.com",
+    "password": "demo_password"
+  },
+  "models": {
+    "routing": "minimax/minimax-text-01",
+    "writer": "minimax/minimax-text-01",
+    "verifier": "minimax/minimax-text-01"
+  }
+}

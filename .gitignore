@@ -1,0 +1,19 @@
+# Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+
+# Local Configurations & Secrets
+.env
+config.json
+
+# Scratch Files
+check_key.py
+test_llm.py
+
+# Generated Outputs
+output/
+
+# OS Files
+.DS_Store
+Thumbs.db
