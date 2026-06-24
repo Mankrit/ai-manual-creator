@@ -8,6 +8,7 @@ An AI-powered, model-agnostic technical writer agent that documents web applicat
 
 * **Python 3.12+**
 * **[uv](https://docs.astral.sh/uv/)** — Extremely fast Python package manager and virtual environment runner.
+* **Node.js 18+** — Required for running the React Documentation Portal.
 
 ---
 
@@ -82,5 +83,34 @@ uv run python main.py --module "User Login" --hints "login.html and dashboard.ht
 
 ### 3. View the Results
 Once completed:
-* The generated Markdown file will be saved under **`output/user_login.md`**.
-* The captured screenshots with visual glowing highlights will be saved under the **`output/`** directory.
+* The generated Markdown file will be saved under **`output/user_login/user_login.md`**.
+* The captured screenshots with visual glowing highlights will be saved under the **`output/user_login/`** directory.
+
+---
+
+## Frontend / UI
+
+### Step 1: Compile the Documentation
+Assemble all documentation modules and visual assets into the portal public directory:
+```bash
+python compile.py
+```
+*(This script scans the `output/` directory, extracts titles, lists screenshots, creates `catalog.json`, and copies files).*
+
+### Step 2: Start the Portal
+Run the Vite development server to view the portal:
+```bash
+# Navigate to portal directory
+cd portal
+
+# Run local development server
+npm run dev
+```
+
+*Note:* If you run into command parsing errors on Windows due to special characters (like `&` or spaces) in your folder paths, run Vite directly using Node:
+```bash
+node node_modules/vite/bin/vite.js
+```
+
+Open your browser and navigate to:
+**`http://localhost:5173/`**

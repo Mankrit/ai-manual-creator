@@ -1,0 +1,33 @@
+[
+  {
+    "key": "user_login",
+    "title": "User Login",
+    "markdown_file": "user_login.md",
+    "screenshots": [
+      "dashboard_after_login.png",
+      "login_error_state.png",
+      "login_initial_state.png",
+      "login_input_fields.png",
+      "login_invalid_filled.png",
+      "login_success_dashboard.png",
+      "login_valid_filled.png"
+    ]
+  },
+  {
+    "key": "user_settings",
+    "title": "User Settings",
+    "markdown_file": "user_settings.md",
+    "screenshots": [
+      "01_login_page.png",
+      "02_login_filled.png",
+      "03_dashboard.png",
+      "04_settings_initial.png",
+      "05b_settings_select_open_again.png",
+      "05_settings_select_open.png",
+      "06_settings_form_filled.png",
+      "07_settings_saved_success.png",
+      "08_settings_with_back_btn.png",
+      "09_back_to_dashboard.png"
+    ]
+  }
+]

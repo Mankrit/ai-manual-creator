@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mock Secure App - Profile Settings</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        .settings-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 40px auto;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .btn-save {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-save:hover {
+            background-color: #0056b3;
+        }
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+        .success-message {
+            color: #28a745;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="settings-container">
+    <h2>Profile Settings</h2>
+    
+    <div class="form-group">
+        <label for="display-name">Display Name</label>
+        <input type="text" id="display-name" placeholder="Enter your display name">
+    </div>
+    
+    <div class="form-group">
+        <label for="theme-select">App Theme</label>
+        <select id="theme-select">
+            <option value="light">Light Mode</option>
+            <option value="dark">Dark Mode</option>
+            <option value="system">System Default</option>
+        </select>
+    </div>
+    
+    <div class="checkbox-group">
+        <input type="checkbox" id="receive-notifications" checked>
+        <label for="receive-notifications" style="font-weight: normal; margin-bottom: 0;">Receive email notifications</label>
+    </div>
+    
+    <div class="btn-group">
+        <button id="back-btn" class="btn-back" onclick="goBack()">Back to Dashboard</button>
+        <button id="save-btn" class="btn-save" onclick="saveSettings()">Save Settings</button>
+    </div>
+    
+    <div id="success-msg" class="success-message">Settings saved successfully!</div>
+</div>
+
+<script>
+    // Access control check
+    const session = localStorage.getItem('user_session');
+    if (!session) {
+        alert('Access Denied. Please log in first.');
+        window.location.href = 'login.html';
+    }
+
+    // Load initial values from localStorage if available
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedName = localStorage.getItem('settings_display_name') || '';
+        const savedTheme = localStorage.getItem('settings_theme') || 'light';
+        const savedNotify = localStorage.getItem('settings_notifications') !== 'false'; // defaults to true
+        
+        document.getElementById('display-name').value = savedName;
+        document.getElementById('theme-select').value = savedTheme;
+        document.getElementById('receive-notifications').checked = savedNotify;
+    });
+
+    function saveSettings() {
+        const displayName = document.getElementById('display-name').value;
+        const theme = document.getElementById('theme-select').value;
+        const notifications = document.getElementById('receive-notifications').checked;
+
+        // Save preferences
+        localStorage.setItem('settings_display_name', displayName);
+        localStorage.setItem('settings_theme', theme);
+        localStorage.setItem('settings_notifications', notifications);
+
+        // Show success alert
+        const successMsg = document.getElementById('success-msg');
+        successMsg.style.display = 'block';
+        
+        setTimeout(() => {
+            successMsg.style.display = 'none';
+        }, 3000);
+    }
+
+    function goBack() {
+        window.location.href = 'dashboard.html';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,393 @@
+import { useState, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import { 
+  BookOpen, 
+  Terminal, 
+  Eye, 
+  Code, 
+  Layers, 
+  Search, 
+  Copy, 
+  Check, 
+  ExternalLink, 
+  Maximize2, 
+  FileText, 
+  X,
+  Sparkles,
+  ChevronRight
+} from 'lucide-react'
+
+// Sub-component to handle copy-to-clipboard states
+const CopyButton = ({ text }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button className="code-copy-btn" onClick={handleCopy} title="Copy code to clipboard">
+      {copied ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
+      <span>{copied ? "Copied!" : "Copy"}</span>
+    </button>
+  );
+};
+
+function App() {
+  const [catalog, setCatalog] = useState([]);
+  const [selectedModule, setSelectedModule] = useState(null);
+  const [docContent, setDocContent] = useState('');
+  const [activeTab, setActiveTab] = useState('user'); // 'user', 'technical', 'all'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxCaption, setLightboxCaption] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 1. Fetch Catalog on mount
+  useEffect(() => {
+    setLoading(true);
+    fetch('/docs/catalog.json')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to load docs catalog.');
+        }
+        return res.json();
+      })
+      .then(data => {
+        setCatalog(data);
+        if (data && data.length > 0) {
+          setSelectedModule(data[0]);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
+  // 2. Fetch Markdown file content when selectedModule changes
+  useEffect(() => {
+    if (!selectedModule) return;
+    setDocContent('');
+    
+    const filePath = `/docs/${selectedModule.key}/${selectedModule.markdown_file}`;
+    fetch(filePath)
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`Failed to load markdown content for ${selectedModule.title}`);
+        }
+        return res.text();
+      })
+      .then(text => {
+        setDocContent(text);
+      })
+      .catch(err => {
+        console.error(err);
+        setDocContent(`Error: Could not load guide content. (${err.message})`);
+      });
+  }, [selectedModule]);
+
+  // 3. Filter catalog modules by search query
+  const filteredCatalog = catalog.filter(module => 
+    module.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    module.key.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // 4. Split Markdown into User Guide vs Technical Guide parts
+  const splitMarkdown = (content) => {
+    if (!content) return { user: '', tech: '', full: '' };
+
+    const techIndex = content.search(/##\s+2\.\s+Technical/i);
+    const userIndex = content.search(/##\s+1\.\s+User/i);
+
+    let userPart = '';
+    let techPart = '';
+
+    if (techIndex !== -1) {
+      techPart = content.slice(techIndex);
+      if (userIndex !== -1) {
+        userPart = content.slice(userIndex, techIndex);
+      } else {
+        userPart = content.slice(0, techIndex);
+      }
+    } else {
+      userPart = content;
+    }
+
+    // Extract title if present at the top
+    const titleMatch = content.match(/^#\s+.+$/m);
+    const title = titleMatch ? titleMatch[0] + '\n\n' : '';
+
+    return {
+      user: userPart ? (userPart.startsWith('#') ? userPart : title + userPart) : content,
+      tech: techPart ? (techPart.startsWith('#') ? techPart : title + techPart) : `${title}## Technical Guide\n\nNo developer documentation was generated for this module.`,
+      full: content
+    };
+  };
+
+  const docs = splitMarkdown(docContent);
+  const activeContent = activeTab === 'user' ? docs.user : activeTab === 'technical' ? docs.tech : docs.full;
+
+  const openLightbox = (src, caption) => {
+    setLightboxImage(src);
+    setLightboxCaption(caption);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+    setLightboxCaption('');
+  };
+
+  // Custom render components for react-markdown
+  const markdownComponents = {
+    // Treat pre as wrapper, let code handle structure
+    pre: ({ children }) => <>{children}</>,
+    code: ({ className, children, ...props }) => {
+      const match = /language-(\w+)/.exec(className || '');
+      const codeText = String(children).replace(/\n$/, '');
+      const isInline = !className;
+
+      if (!isInline) {
+        return (
+          <div className="code-block-container">
+            <div className="code-block-header">
+              <span>{match ? match[1].toUpperCase() : 'CODE'}</span>
+              <CopyButton text={codeText} />
+            </div>
+            <pre className={className} style={{ margin: 0 }}>
+              <code className={className} {...props}>
+                {children}
+              </code>
+            </pre>
+          </div>
+        );
+      }
+
+      return (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    },
+    img: ({ src, alt, ...props }) => {
+      const isAbsolute = src.startsWith('http') || src.startsWith('/');
+      const finalSrc = isAbsolute ? src : `/docs/${selectedModule.key}/${src}`;
+      return (
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <img 
+            src={finalSrc} 
+            alt={alt} 
+            onClick={() => openLightbox(finalSrc, alt || src)} 
+            {...props} 
+          />
+          <button 
+            className="zoom-overlay-btn"
+            onClick={() => openLightbox(finalSrc, alt || src)}
+            style={{
+              position: 'absolute',
+              bottom: '12px',
+              right: '12px',
+              background: 'rgba(15, 17, 37, 0.8)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '4px',
+              padding: '6px',
+              cursor: 'pointer',
+              color: 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Maximize2 size={14} />
+          </button>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="app-container">
+      {/* 1. Sidebar */}
+      <aside className="sidebar">
+        <div className="sidebar-header">
+          <Sparkles className="logo-icon" size={24} />
+          <span className="logo-text">AI Manual Creator</span>
+        </div>
+        
+        <div className="sidebar-search">
+          <div className="search-input-wrapper">
+            <Search className="search-icon" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search documentation..." 
+              className="search-input"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="module-list">
+          {loading ? (
+            <div className="no-module-selected">Loading...</div>
+          ) : filteredCatalog.length === 0 ? (
+            <div className="no-module-selected" style={{ fontSize: '0.9rem' }}>
+              No modules found
+            </div>
+          ) : (
+            filteredCatalog.map(module => (
+              <div 
+                key={module.key} 
+                className={`module-item ${selectedModule?.key === module.key ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedModule(module);
+                  setActiveTab('user');
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Layers size={16} style={{ color: selectedModule?.key === module.key ? 'var(--accent-violet)' : 'var(--text-muted)' }} />
+                  <span className="module-item-title">{module.title}</span>
+                </div>
+                <ChevronRight size={14} style={{ color: 'var(--text-muted)' }} />
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="sidebar-footer">
+          <span>Obsidian v1.0.0</span>
+          <span>● Online</span>
+        </div>
+      </aside>
+
+      {/* 2. Main content */}
+      <main className="main-content">
+        {selectedModule ? (
+          <>
+            <header className="main-header">
+              <div className="header-title-section">
+                <BookOpen size={20} className="logo-icon" />
+                <span className="header-title">{selectedModule.title} Module</span>
+              </div>
+
+              {/* Tab Switcher */}
+              <div className="tab-switcher">
+                <button 
+                  className={`tab-btn ${activeTab === 'user' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('user')}
+                >
+                  <Eye size={15} />
+                  <span>User Guide</span>
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'technical' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('technical')}
+                >
+                  <Code size={15} />
+                  <span>Technical Guide</span>
+                </button>
+                <button 
+                  className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('all')}
+                >
+                  <FileText size={15} />
+                  <span>All-in-One</span>
+                </button>
+              </div>
+            </header>
+
+            <div className="content-body">
+              {/* Left Panel: Markdown Content */}
+              <div className="doc-panel">
+                <div className="markdown-body">
+                  {docContent ? (
+                    <ReactMarkdown components={markdownComponents}>
+                      {activeContent}
+                    </ReactMarkdown>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', padding: '80px 0' }}>
+                      <div className="no-module-selected">Loading guide content...</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Panel: Media / Screenshots Sidebar */}
+              <div className="media-panel">
+                <h3 className="media-section-title">
+                  <Terminal size={18} style={{ color: 'var(--accent-pink)' }} />
+                  <span>Visual Flow Screenshots</span>
+                </h3>
+                
+                {selectedModule.screenshots && selectedModule.screenshots.length > 0 ? (
+                  <div className="media-grid">
+                    {selectedModule.screenshots.map((shot, idx) => {
+                      const imageSrc = `/docs/${selectedModule.key}/${shot}`;
+                      // Clean label: e.g. "login_initial_state.png" -> "Login Initial State"
+                      const label = shot
+                        .replace(/\.\w+$/, '')
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, c => c.toUpperCase());
+
+                      return (
+                        <div 
+                          key={idx} 
+                          className="screenshot-card"
+                          onClick={() => openLightbox(imageSrc, label)}
+                        >
+                          <div className="screenshot-thumbnail-wrapper">
+                            <img 
+                              src={imageSrc} 
+                              alt={label} 
+                              className="screenshot-thumbnail" 
+                            />
+                          </div>
+                          <div className="screenshot-card-label">{label}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', padding: '20px 0' }}>
+                    No screenshots captured for this module.
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="no-module-selected" style={{ height: '100%' }}>
+            <Sparkles size={40} className="logo-icon" style={{ animation: 'bounce 2s infinite' }} />
+            <h2>AI Modular Manual Portal</h2>
+            <p>Select a module from the sidebar to view generated guides.</p>
+          </div>
+        )}
+      </main>
+
+      {/* 3. Lightbox Modal */}
+      {lightboxImage && (
+        <div className="lightbox-overlay" onClick={closeLightbox}>
+          <button className="lightbox-close-btn" onClick={closeLightbox}>
+            <X size={20} />
+          </button>
+          <div className="lightbox-img-wrapper" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={lightboxImage} 
+              alt={lightboxCaption} 
+              className="lightbox-image" 
+            />
+          </div>
+          <p className="lightbox-caption">{lightboxCaption}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
