@@ -29,7 +29,7 @@ You must follow this disciplined, step-by-step process:
      ## 1. User Guide (How to Use)
      * High-level explanation of the feature's purpose.
      * Step-by-step instructions on how a user performs the action.
-     * Embed the captured screenshots inline precisely at the relevant step: `![Step description](output/screenshot_name.png)`.
+      * Embed the captured screenshots inline precisely at the relevant step: `![Step description](screenshot_name.png)`.
      
      ## 2. Technical Guide (Under the Hood)
      * Document the codebase structure for this feature (files involved).
@@ -64,5 +64,5 @@ Target URL: {app_url}
 Please perform:
 1. Code search and read to understand how "{module_name}" is built.
 2. Web browser navigation, interaction, and glowing screenshots of "{module_name}" in action.
-3. Write a markdown guide containing both the User-Facing Guide (with screenshots) and the Technical Developer Guide. Save the final markdown guide to 'output/{module_name.lower().replace(" ", "_")}.md'.
+3. Write a markdown guide containing both the User-Facing Guide (with screenshots) and the Technical Developer Guide. Save the final markdown guide to '{module_name.lower().replace(" ", "_")}.md'.
 """

@@ -22,23 +22,6 @@ from core.tools.web_tools import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("main")
 
-def write_documentation_file(filepath: str, content: str) -> str:
-    """
-    Write the generated markdown documentation to a file in the output/ directory.
-    filepath: The filename (e.g. 'login.md'). It will be saved under output/.
-    content: The markdown documentation content to save.
-    """
-    try:
-        os.makedirs("output", exist_ok=True)
-        # Sandbox file write to output/ directory
-        basename = os.path.basename(filepath)
-        full_path = os.path.join("output", basename)
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(content)
-        return f"Successfully saved documentation file to output/{basename}."
-    except Exception as e:
-        return f"Error writing documentation file: {str(e)}"
-
 def main():
     parser = argparse.ArgumentParser(description="AI Modular Manual Creator CLI")
     parser.add_argument("--module", type=str, required=True, help="The name of the module/feature to document (e.g. 'Login')")
@@ -72,7 +55,11 @@ def main():
     logger.info(f"Using Model: {model}")
     logger.info("--------------------------------------------------")
     
-    # 2. Build pre-bound tools
+    # 2. Build pre-bound tools and sandbox directory
+    module_folder = args.module.lower().replace(" ", "_")
+    module_dir = os.path.join("output", module_folder)
+    os.makedirs(module_dir, exist_ok=True)
+    
     def search_files(query: str) -> list[str]:
         """
         Search for filenames containing the query string (case-insensitive) in the target codebase.
@@ -95,6 +82,32 @@ def main():
         pattern: The text query to search for inside file contents.
         """
         return grep_codebase(target_codebase, pattern)
+
+    def save_documentation(filepath: str, content: str) -> str:
+        """
+        Write the generated markdown documentation to a file in the active module's output directory.
+        filepath: The filename (e.g. 'login.md'). It will be saved under the active module folder.
+        content: The markdown documentation content to save.
+        """
+        try:
+            basename = os.path.basename(filepath)
+            full_path = os.path.join(module_dir, basename)
+            with open(full_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return f"Successfully saved documentation file to output/{module_folder}/{basename}."
+        except Exception as e:
+            return f"Error writing documentation file: {str(e)}"
+
+    def capture_and_save_screenshot(filename: str, highlight_selector: str = None) -> str:
+        """
+        Capture a screenshot of the current page and save it in the active module's output directory.
+        filename: The output filename (e.g. 'login_page.png'). Saved in the active module folder.
+        highlight_selector: Optional CSS selector of an element to highlight with a glowing box before screenshot.
+        """
+        # Pass the relative subpath to browser_screenshot so it writes to output/module_folder/filename
+        basename = os.path.basename(filename)
+        rel_path = f"{module_folder}/{basename}"
+        return browser_screenshot(rel_path, highlight_selector)
         
     tools = {
         "search_files": search_files,
@@ -103,13 +116,15 @@ def main():
         "browser_navigate": browser_navigate,
         "browser_fill": browser_fill,
         "browser_click": browser_click,
-        "browser_screenshot": browser_screenshot,
-        "write_documentation_file": write_documentation_file
+        "browser_screenshot": capture_and_save_screenshot,
+        "write_documentation_file": save_documentation
     }
     
     # 3. Assemble Prompts
+    import time
     system_instruction = get_system_instruction()
     user_prompt = get_user_prompt(args.module, target_url, credentials, args.hints)
+    user_prompt += f"\n\nRun Identifier: {time.strftime('%Y-%m-%d %H:%M:%S')}"
     
     # 4. Run Agent
     logger.info("Starting documentation agent pipeline...")
@@ -119,7 +134,7 @@ def main():
             user_prompt=user_prompt,
             tools=tools,
             model=model,
-            max_turns=30
+            max_turns=50
         )
         logger.info("Documentation agent pipeline finished successfully.")
     except Exception as e:

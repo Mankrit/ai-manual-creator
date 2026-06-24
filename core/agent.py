@@ -1,6 +1,7 @@
 import inspect
 import json
 import logging
+import time
 from typing import Callable, Any, Dict, List, Union
 import litellm
 from dotenv import load_dotenv
@@ -93,8 +94,15 @@ def run_agent(
     Runs a tool-use agent loop using LiteLLM.
     Returns the complete message history.
     """
-    # 1. Generate schemas for the tools
-    tool_schemas = [function_to_schema(tool) for tool in tools.values()] if tools else None
+    # 1. Generate schemas for the tools, forcing schema name to match the registration key
+    tool_schemas = []
+    if tools:
+        for name, func in tools.items():
+            schema = function_to_schema(func)
+            schema["function"]["name"] = name
+            tool_schemas.append(schema)
+    else:
+        tool_schemas = None
     
     # 2. Build initial message history
     messages = [
@@ -107,6 +115,10 @@ def run_agent(
         turn += 1
         logger.info(f"--- Agent Turn {turn}/{max_turns} using model: {model} ---")
         
+        # Add sleep to avoid rate limits on free models (e.g. OpenRouter 15 RPM limit)
+        if "openrouter" in model.lower():
+            time.sleep(4)
+        
         try:
             # Call LiteLLM completion
             # litellm handles standard tool call routing for Gemini, Claude, OpenAI, etc.
@@ -114,7 +126,8 @@ def run_agent(
                 model=model,
                 messages=messages,
                 tools=tool_schemas,
-                tool_choice="auto" if tool_schemas else None
+                tool_choice="auto" if tool_schemas else None,
+                temperature=0.3
             )
         except Exception as e:
             logger.error(f"Error calling LLM: {str(e)}")
