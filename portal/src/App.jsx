@@ -47,6 +47,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sessionVersion] = useState(() => Date.now());
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
   // 1. Fetch Catalog on mount
   useEffect(() => {
@@ -72,16 +73,24 @@ function App() {
       });
   }, []);
 
-  // 2. Fetch Markdown file content when selectedModule changes
+  // 2. Fetch Markdown file content when selectedModule or selectedLanguage changes
   useEffect(() => {
     if (!selectedModule) return;
     setDocContent('');
     
-    const filePath = `/docs/${selectedModule.key}/${selectedModule.markdown_file}`;
+    const activeLanguage = (selectedModule.languages && selectedModule.languages.includes(selectedLanguage))
+      ? selectedLanguage
+      : 'en';
+      
+    const markdownFile = activeLanguage === 'en'
+      ? selectedModule.markdown_file
+      : `${selectedModule.key}_${activeLanguage}.md`;
+      
+    const filePath = `/docs/${selectedModule.key}/${markdownFile}`;
     fetch(filePath)
       .then(res => {
         if (!res.ok) {
-          throw new Error(`Failed to load markdown content for ${selectedModule.title}`);
+          throw new Error(`Failed to load markdown content for ${selectedModule.title} (${activeLanguage})`);
         }
         return res.text();
       })
@@ -92,7 +101,7 @@ function App() {
         console.error(err);
         setDocContent(`Error: Could not load guide content. (${err.message})`);
       });
-  }, [selectedModule]);
+  }, [selectedModule, selectedLanguage]);
 
   // 3. Filter catalog modules by search query
   const filteredCatalog = catalog.filter(module => 
@@ -134,6 +143,14 @@ function App() {
 
   const docs = splitMarkdown(docContent);
   const activeContent = activeTab === 'user' ? docs.user : activeTab === 'technical' ? docs.tech : docs.full;
+
+  const activeLanguage = (selectedModule && selectedModule.languages && selectedModule.languages.includes(selectedLanguage))
+    ? selectedLanguage
+    : 'en';
+    
+  const activeVideoFile = selectedModule && selectedModule.video
+    ? (typeof selectedModule.video === 'object' ? selectedModule.video[activeLanguage] : selectedModule.video)
+    : null;
 
   const openLightbox = (src, caption) => {
     setLightboxImage(src);
@@ -272,10 +289,46 @@ function App() {
       <main className="main-content">
         {selectedModule ? (
           <>
-            <header className="main-header">
-              <div className="header-title-section">
-                <BookOpen size={20} className="logo-icon" />
-                <span className="header-title">{selectedModule.title} Module</span>
+            <header className="main-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div className="header-title-section">
+                  <BookOpen size={20} className="logo-icon" />
+                  <span className="header-title">{selectedModule.title} Module</span>
+                </div>
+
+                {/* Language Switcher */}
+                {selectedModule.languages && selectedModule.languages.length > 1 && (
+                  <div className="language-switcher" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '20px',
+                    padding: '3px',
+                    gap: '2px'
+                  }}>
+                    {selectedModule.languages.map(lang => (
+                      <button
+                        key={lang}
+                        onClick={() => setSelectedLanguage(lang)}
+                        style={{
+                          background: activeLanguage === lang ? 'var(--accent-violet)' : 'transparent',
+                          color: activeLanguage === lang ? '#fff' : 'var(--text-secondary)',
+                          border: 'none',
+                          borderRadius: '16px',
+                          padding: '5px 12px',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        {lang === 'en' ? 'English' : lang === 'hi' ? 'हिन्दी' : lang === 'hinglish' ? 'Hinglish' : lang}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Tab Switcher */}
@@ -308,7 +361,7 @@ function App() {
               {/* Left Panel: Markdown Content with Embedded Video if present */}
               <div className="doc-panel">
                 <div className="markdown-body">
-                  {selectedModule.video && (activeTab === 'user' || activeTab === 'all') && (
+                  {activeVideoFile && (activeTab === 'user' || activeTab === 'all') && (
                     <div className="video-walkthrough-hero" style={{
                       marginBottom: '32px',
                       background: 'linear-gradient(135deg, rgba(21, 24, 37, 0.7) 0%, rgba(15, 17, 26, 0.7) 100%)',
@@ -341,7 +394,8 @@ function App() {
                       
                       <div style={{ position: 'relative', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)', backgroundColor: '#000' }}>
                         <video 
-                          src={`/docs/${selectedModule.key}/${selectedModule.video}?v=${sessionVersion}`} 
+                          key={`${selectedModule.key}_${activeLanguage}`}
+                          src={`/docs/${selectedModule.key}/${activeVideoFile}?v=${sessionVersion}`} 
                           controls 
                           style={{ width: '100%', display: 'block', maxHeight: '420px' }}
                         />

@@ -12,7 +12,14 @@
       "login_success_dashboard.png",
       "login_valid_filled.png"
     ],
-    "video": "walkthrough.mp4"
+    "languages": [
+      "en",
+      "hi"
+    ],
+    "video": {
+      "en": "walkthrough.mp4",
+      "hi": "walkthrough_hi.mp4"
+    }
   },
   {
     "key": "user_login_module",
@@ -22,7 +29,14 @@
       "dashboard_success_state.png",
       "login_form_filled.png"
     ],
-    "video": "walkthrough.mp4"
+    "languages": [
+      "en",
+      "hi"
+    ],
+    "video": {
+      "en": "walkthrough.mp4",
+      "hi": "walkthrough_hi.mp4"
+    }
   },
   {
     "key": "user_settings",
@@ -40,6 +54,13 @@
       "08_settings_with_back_btn.png",
       "09_back_to_dashboard.png"
     ],
-    "video": "walkthrough.mp4"
+    "languages": [
+      "en",
+      "hi"
+    ],
+    "video": {
+      "en": "walkthrough.mp4",
+      "hi": "walkthrough_hi.mp4"
+    }
   }
 ]
