@@ -7,11 +7,14 @@ def search_codebase(target_path: str, query: str) -> List[str]:
     Returns a list of matching file paths relative to target_path.
     """
     matches = []
+    # Common compiled, ignored, or temporary folders we should not index
+    ignore_dirs = {
+        ".git", "node_modules", "venv", ".venv", "build", "dist", 
+        "__pycache__", "bin", "obj", "temp", ".vs", "packages"
+    }
     for root, dirnames, filenames in os.walk(target_path):
-        # Exclude common compiled or ignored folders
-        for ignore_dir in [".git", "node_modules", "venv", ".venv", "build", "dist", "__pycache__"]:
-            if ignore_dir in dirnames:
-                dirnames.remove(ignore_dir)
+        # Exclude directories in-place
+        dirnames[:] = [d for d in dirnames if d.lower() not in ignore_dirs]
                 
         for filename in filenames:
             if query.lower() in filename.lower():
@@ -27,7 +30,7 @@ def read_code_file(target_path: str, filepath: str, start_line: int = 1, end_lin
     Optional start_line and end_line parameters for large files (1-indexed).
     """
     full_path = os.path.join(target_path, filepath)
-    # Security check: ensure path is inside target_path
+    # Security check: ensure path is within target_path
     real_target = os.path.realpath(target_path)
     real_file = os.path.realpath(full_path)
     if not real_file.startswith(real_target):
@@ -59,15 +62,25 @@ def grep_codebase(target_path: str, pattern: str) -> List[Dict[str, Any]]:
     Returns list of matches containing file path, line number, and line content.
     """
     matches = []
+    ignore_dirs = {
+        ".git", "node_modules", "venv", ".venv", "build", "dist", 
+        "__pycache__", "bin", "obj", "temp", ".vs", "packages"
+    }
+    # Expanded list of binary or non-text extensions to skip
+    binary_extensions = {
+        '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz', 
+        '.db', '.sqlite', '.dll', '.exe', '.pdb', '.xlsx', '.xls', '.doc', '.docx', 
+        '.ppt', '.pptx', '.rar', '.7z', '.mp3', '.mp4', '.avi', '.mkv', '.class'
+    }
+    
     for root, dirnames, filenames in os.walk(target_path):
-        for ignore_dir in [".git", "node_modules", "venv", ".venv", "build", "dist", "__pycache__"]:
-            if ignore_dir in dirnames:
-                dirnames.remove(ignore_dir)
+        dirnames[:] = [d for d in dirnames if d.lower() not in ignore_dirs]
                 
         for filename in filenames:
-            # Skip binary files
-            if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz', '.db', '.sqlite')):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in binary_extensions:
                 continue
+                
             full_path = os.path.join(root, filename)
             rel_path = os.path.relpath(full_path, target_path).replace("\\", "/")
             try:
@@ -77,7 +90,7 @@ def grep_codebase(target_path: str, pattern: str) -> List[Dict[str, Any]]:
                             matches.append({
                                 "file": rel_path,
                                 "line_number": i,
-                                "content": line.strip()
+                                "content": content
                             })
                             if len(matches) >= 50:
                                 return matches

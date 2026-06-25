@@ -16,7 +16,8 @@ from core.tools.web_tools import (
     browser_fill,
     browser_click,
     browser_screenshot,
-    close_browser
+    close_browser,
+    execute_login_flow
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -26,18 +27,19 @@ def main():
     parser = argparse.ArgumentParser(description="AI Modular Manual Creator CLI")
     parser.add_argument("--module", type=str, required=True, help="The name of the module/feature to document (e.g. 'Login')")
     parser.add_argument("--hints", type=str, default="", help="Optional hints about the files or codebase scope")
+    parser.add_argument("--config", type=str, default="config.json", help="Path to config JSON file")
     args = parser.parse_args()
     
-    # 1. Load config.json
-    if not os.path.exists("config.json"):
-        logger.error("Error: config.json not found. Please copy config.example.json to config.json.")
+    # 1. Load config
+    if not os.path.exists(args.config):
+        logger.error(f"Error: Config file {args.config} not found.")
         sys.exit(1)
         
     try:
-        with open("config.json", "r") as f:
+        with open(args.config, "r") as f:
             config = json.load(f)
     except Exception as e:
-        logger.error(f"Error reading config.json: {str(e)}")
+        logger.error(f"Error reading config file {args.config}: {str(e)}")
         sys.exit(1)
         
     target_codebase = config.get("target_codebase_path")
@@ -46,19 +48,59 @@ def main():
     model = config.get("models", {}).get("writer", "openai/MiniMax-M3")
     
     if not target_codebase or not target_url:
-        logger.error("Error: target_codebase_path and target_app_url must be defined in config.json.")
+        logger.error("Error: target_codebase_path and target_app_url must be defined in the config file.")
         sys.exit(1)
         
     logger.info(f"Target Codebase: {target_codebase}")
     logger.info(f"Target Web Application: {target_url}")
     logger.info(f"Documenting Module: {args.module}")
     logger.info(f"Using Model: {model}")
+    logger.info(f"Using Config: {args.config}")
     logger.info("--------------------------------------------------")
     
     # 2. Build pre-bound tools and sandbox directory
     module_folder = args.module.lower().replace(" ", "_")
     module_dir = os.path.join("output", module_folder)
     os.makedirs(module_dir, exist_ok=True)
+    
+    # Load project metadata if configured
+    metadata_info = ""
+    metadata_path = config.get("project_metadata_path")
+    if metadata_path and os.path.exists(metadata_path):
+        try:
+            with open(metadata_path, "r") as f:
+                project_meta = json.load(f)
+            
+            project_name = project_meta.get("project_name", "Target Project")
+            tech_stack = project_meta.get("tech_stack", "")
+            module_meta = project_meta.get("modules", {}).get(args.module)
+            
+            metadata_info += f"\nProject Name: {project_name}\n"
+            if tech_stack:
+                metadata_info += f"Tech Stack: {tech_stack}\n"
+                
+            if module_meta:
+                metadata_info += f"Module Metadata details for '{args.module}':\n"
+                metadata_info += f" - Description: {module_meta.get('description', '')}\n"
+                metadata_info += f" - Targeted files to analyze: {', '.join(module_meta.get('entry_files', []))}\n"
+                if module_meta.get("related_folders"):
+                    metadata_info += f" - Related folders: {', '.join(module_meta.get('related_folders', []))}\n"
+                if module_meta.get("url_path"):
+                    metadata_info += f" - Module URL: {module_meta.get('url_path')}\n"
+            logger.info("Successfully loaded project metadata layer.")
+        except Exception as e:
+            logger.warning(f"Failed to read project metadata: {str(e)}")
+            
+    # Check if a manual already exists for incremental updates
+    existing_manual_content = ""
+    expected_manual_path = os.path.join(module_dir, f"{module_folder}.md")
+    if os.path.exists(expected_manual_path):
+        try:
+            with open(expected_manual_path, "r", encoding="utf-8") as f:
+                existing_manual_content = f.read()
+            logger.info(f"Found existing manual at {expected_manual_path}. Enabling incremental updates.")
+        except Exception as e:
+            logger.warning(f"Could not read existing manual: {str(e)}")
     
     def search_files(query: str) -> list[str]:
         """
@@ -124,9 +166,27 @@ def main():
     import time
     system_instruction = get_system_instruction()
     user_prompt = get_user_prompt(args.module, target_url, credentials, args.hints)
+    
+    if metadata_info:
+        user_prompt += f"\n\n=== PROJECT METADATA LAYER ===\nUse this direct mapping metadata to guide your codebase investigation and navigation:\n{metadata_info}"
+        
+    if existing_manual_content:
+        user_prompt += f"\n\n=== EXISTING MANUAL ===\nAn existing manual already exists for this module. DO NOT perform a full rewrite from scratch. Instead, update and adapt this manual to include the new changes/features while keeping as much of the existing structure and wording intact as possible:\n\n{existing_manual_content}"
+        
     user_prompt += f"\n\nRun Identifier: {time.strftime('%Y-%m-%d %H:%M:%S')}"
     
-    # 4. Run Agent
+    # 4. Run Pre-defined Login Flow if specified
+    login_flow = config.get("login_flow")
+    if login_flow:
+        is_login_module = any(x in args.module.lower() for x in ["login", "signin", "auth"])
+        if is_login_module:
+            logger.info("Active module is a login/auth module. Skipping automated login to allow manual documentation of the login steps.")
+        else:
+            logger.info("Executing configured login flow...")
+            login_result = execute_login_flow(login_flow)
+            logger.info(login_result)
+        
+    # 5. Run Agent
     logger.info("Starting documentation agent pipeline...")
     try:
         run_agent(

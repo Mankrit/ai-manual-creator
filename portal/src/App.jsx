@@ -14,7 +14,8 @@ import {
   FileText, 
   X,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Video
 } from 'lucide-react'
 
 // Sub-component to handle copy-to-clipboard states
@@ -45,6 +46,7 @@ function App() {
   const [lightboxCaption, setLightboxCaption] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sessionVersion] = useState(() => Date.now());
 
   // 1. Fetch Catalog on mount
   useEffect(() => {
@@ -301,11 +303,52 @@ function App() {
                 </button>
               </div>
             </header>
-
+ 
             <div className="content-body">
-              {/* Left Panel: Markdown Content */}
+              {/* Left Panel: Markdown Content with Embedded Video if present */}
               <div className="doc-panel">
                 <div className="markdown-body">
+                  {selectedModule.video && (activeTab === 'user' || activeTab === 'all') && (
+                    <div className="video-walkthrough-hero" style={{
+                      marginBottom: '32px',
+                      background: 'linear-gradient(135deg, rgba(21, 24, 37, 0.7) 0%, rgba(15, 17, 26, 0.7) 100%)',
+                      border: '1px solid var(--border-medium)',
+                      borderRadius: '12px',
+                      padding: '24px',
+                      boxShadow: 'var(--shadow-lg), var(--glow-violet)',
+                      backdropFilter: 'blur(10px)',
+                      animation: 'fadeIn 0.4s ease-out'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ 
+                            background: 'rgba(139, 92, 246, 0.15)',
+                            padding: '8px',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid rgba(139, 92, 246, 0.2)'
+                          }}>
+                            <Video size={20} style={{ color: 'var(--accent-violet)', filter: 'drop-shadow(0 0 4px rgba(139, 92, 246, 0.4))' }} />
+                          </div>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>Video Walkthrough Guide</h3>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Watch a neural narration of this manual</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ position: 'relative', width: '100%', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.05)', backgroundColor: '#000' }}>
+                        <video 
+                          src={`/docs/${selectedModule.key}/${selectedModule.video}?v=${sessionVersion}`} 
+                          controls 
+                          style={{ width: '100%', display: 'block', maxHeight: '420px' }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {docContent ? (
                     <ReactMarkdown components={markdownComponents}>
                       {activeContent}
@@ -317,6 +360,7 @@ function App() {
                   )}
                 </div>
               </div>
+
 
               {/* Right Panel: Media / Screenshots Sidebar */}
               <div className="media-panel">

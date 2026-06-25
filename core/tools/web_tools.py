@@ -174,3 +174,40 @@ def browser_screenshot(filename: str, highlight_selector: Optional[str] = None) 
         return f"Screenshot saved successfully to output/{filename}."
     except Exception as e:
         return f"Error capturing screenshot: {str(e)}"
+
+def execute_login_flow(flow_config: list) -> str:
+    """
+    Executes a pre-defined sequence of browser actions to log in automatically.
+    flow_config: A list of dicts specifying actions like navigate, fill, click, wait_for.
+    """
+    try:
+        page = get_page()
+        logger.info("Executing automated login flow...")
+        for step in flow_config:
+            action = step.get("action")
+            if action == "navigate":
+                url = step.get("url")
+                logger.info(f"Login Step: navigate to {url}")
+                page.goto(url)
+                page.wait_for_load_state("load")
+            elif action == "fill":
+                selector = step.get("selector")
+                value = step.get("value")
+                logger.info(f"Login Step: fill {selector} with '{value}'")
+                page.wait_for_selector(selector, state="visible")
+                page.locator(selector).scroll_into_view_if_needed()
+                page.fill(selector, value)
+            elif action == "click":
+                selector = step.get("selector")
+                logger.info(f"Login Step: click {selector}")
+                page.wait_for_selector(selector, state="visible")
+                page.locator(selector).scroll_into_view_if_needed()
+                page.click(selector)
+                time.sleep(1.0)
+            elif action == "wait_for":
+                selector = step.get("selector")
+                logger.info(f"Login Step: wait for selector {selector}")
+                page.wait_for_selector(selector, state="visible")
+        return "Login flow executed successfully."
+    except Exception as e:
+        return f"Error executing login flow: {str(e)}"

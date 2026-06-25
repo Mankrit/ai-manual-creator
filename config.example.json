@@ -9,5 +9,7 @@
     "routing": "minimax/minimax-text-01",
     "writer": "minimax/minimax-text-01",
     "verifier": "minimax/minimax-text-01"
-  }
+  },
+  "project_metadata_path": "project_metadata.json",
+  "login_flow": null
 }
