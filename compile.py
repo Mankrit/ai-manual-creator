@@ -266,28 +266,14 @@ def translate_markdown(content, lang, model_name):
 def get_localized_slide_text(title, lang):
     """
     Returns the title and subtitle strings for slide cards based on target language.
+    Always returns English text to prevent Pillow font support issues with non-ASCII scripts.
     """
-    if lang == "hi":
-        return {
-            "intro_title": f"{title} वॉकथ्रू",
-            "intro_subtitle": "वीडियो ट्यूटोरियल मार्गदर्शिका",
-            "outro_title": "वॉकथ्रू पूरा हुआ",
-            "outro_subtitle": "देखने के लिए धन्यवाद"
-        }
-    elif lang == "hinglish":
-        return {
-            "intro_title": f"{title} Walkthrough",
-            "intro_subtitle": "Video Tutorial Guide",
-            "outro_title": "Walkthrough Completed",
-            "outro_subtitle": "Thank You for Watching"
-        }
-    else: # Default English
-        return {
-            "intro_title": f"{title} Walkthrough",
-            "intro_subtitle": "Video Tutorial Guide",
-            "outro_title": "Walkthrough Completed",
-            "outro_subtitle": "Thank You for Watching"
-        }
+    return {
+        "intro_title": f"{title} Walkthrough",
+        "intro_subtitle": "Video Tutorial Guide",
+        "outro_title": "Walkthrough Completed",
+        "outro_subtitle": "Thank You for Watching"
+    }
 
 
 def generate_video(module_path, steps, output_video_path, script, tts_engine="edge-tts", voice="en-US-AndrewNeural", pacing_scale_factor=0.35):
@@ -573,7 +559,7 @@ def compile_docs(config_path="config.json"):
                         intro_path = os.path.join(item_path, intro_img_name)
                         outro_path = os.path.join(item_path, outro_img_name)
                         
-                        slide_txt = get_localized_slide_text(title_lang, lang)
+                        slide_txt = get_localized_slide_text(title_en, lang)
                         create_title_slide(slide_txt["intro_title"], slide_txt["intro_subtitle"], intro_path)
                         create_title_slide(slide_txt["outro_title"], slide_txt["outro_subtitle"], outro_path)
                         
