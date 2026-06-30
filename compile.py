@@ -131,7 +131,8 @@ Response JSON format:
             max_tokens=4096
         )
         
-        raw_content = response.choices[0].message.content.strip()
+        resp_msg = response.choices[0].message.content
+        raw_content = resp_msg.strip() if resp_msg else ""
         
         # Robust JSON array extraction
         start = raw_content.find('[')
@@ -447,7 +448,7 @@ def compile_docs(config_path="config.json"):
         if os.path.isdir(item_path):
             module_key = item
             # Avoid loading generated localized manuals as raw modules
-            md_files = [f for f in os.listdir(item_path) if f.endswith(".md") and not any(f.endswith(f"_{l}.md") for l in languages if l != "en")]
+            md_files = [f for f in os.listdir(item_path) if f.lower().endswith(".md") and not any(f.lower().endswith(f"_{l}.md") for l in languages if l != "en")]
             if not md_files:
                 continue
                 
@@ -456,7 +457,7 @@ def compile_docs(config_path="config.json"):
             
             # Copy baseline screenshots/resources (exclude md and walkthrough files, they copy per-language)
             for f in os.listdir(item_path):
-                if f.startswith("__temp_") or f.endswith(".md") or "walkthrough" in f:
+                if f.startswith("__temp_") or f.lower().endswith(".md") or "walkthrough" in f:
                     continue
                 src_file = os.path.join(item_path, f)
                 dest_file = os.path.join(dest_module_dir, f)

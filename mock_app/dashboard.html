@@ -47,6 +47,7 @@
     <p>This is a mock dashboard representing a successful login workflow.</p>
     <div style="margin: 20px 0; display: flex; justify-content: center; gap: 15px;">
         <button id="settings-btn" onclick="goToSettings()" style="background-color: #007bff;">Settings</button>
+        <button id="config-btn" onclick="goToConfig()" style="background-color: #28a745;">Configuration</button>
         <button id="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
 </div>
@@ -63,6 +64,10 @@
 
     function goToSettings() {
         window.location.href = 'settings.html';
+    }
+
+    function goToConfig() {
+        window.location.href = 'configuration.html';
     }
 
     function handleLogout() {

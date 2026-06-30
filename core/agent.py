@@ -116,8 +116,8 @@ def run_agent(
         logger.info(f"--- Agent Turn {turn}/{max_turns} using model: {model} ---")
         
         # Add sleep to avoid rate limits on free models (e.g. OpenRouter 15 RPM limit)
-        if "openrouter" in model.lower():
-            time.sleep(4)
+        if "openrouter" in model.lower() or "free" in model.lower() or "cohere" in model.lower():
+            time.sleep(5)
         
         try:
             # Call LiteLLM completion

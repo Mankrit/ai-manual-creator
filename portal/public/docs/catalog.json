@@ -1,16 +1,14 @@
 [
   {
-    "key": "user_login",
-    "title": "User Login",
-    "markdown_file": "user_login.md",
+    "key": "user_configuration",
+    "title": "User Configuration",
+    "markdown_file": "user_configuration.md",
     "screenshots": [
-      "dashboard_after_login.png",
-      "login_error_state.png",
-      "login_initial_state.png",
-      "login_input_fields.png",
-      "login_invalid_filled.png",
-      "login_success_dashboard.png",
-      "login_valid_filled.png"
+      "configuration_before_interaction.png",
+      "configuration_checkbox_checked.png",
+      "configuration_initial.png",
+      "configuration_with_checkbox_checked.png",
+      "configuration_with_second_checkbox_checked.png"
     ],
     "languages": [
       "en",
@@ -22,12 +20,17 @@
     }
   },
   {
-    "key": "user_login_module",
-    "title": "User Login Module",
-    "markdown_file": "user_login_module.md",
+    "key": "user_login",
+    "title": "User Login",
+    "markdown_file": "user_login.md",
     "screenshots": [
-      "dashboard_success_state.png",
-      "login_form_filled.png"
+      "dashboard_after_login.png",
+      "login_error_state.png",
+      "login_initial_state.png",
+      "login_input_fields.png",
+      "login_invalid_filled.png",
+      "login_success_dashboard.png",
+      "login_valid_filled.png"
     ],
     "languages": [
       "en",

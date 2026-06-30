@@ -19,9 +19,8 @@ You must follow this disciplined, step-by-step process:
    * Perform a complete walkthrough of the target feature. Use the selectors and validation rules you found during code analysis to click buttons (`browser_click`) and fill forms (`browser_fill`).
    * Capture high-quality screenshots using `browser_screenshot` at key steps (e.g., filled form, success state, error validation). 
    * When capturing a screenshot of a specific user interaction, use the `highlight_selector` argument to draw a beautiful, glowing highlight around the button or input field being operated.
-
 3. WRITE DOCUMENTATION (Markdown Output)
-   * Create a single, polished Markdown file and save it using a file-writing tool (or return it as your final answer). The documentation must have two distinct sections:
+   * Create a single, polished Markdown file and save it using a file-writing tool. The documentation must have two distinct sections:
      
      ---
      # MODULE: [Feature Name]
